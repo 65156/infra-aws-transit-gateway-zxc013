@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  Transit Gateway Deployment for OFX
+
+Parameters: #Parameters File
+
+Resources:
+
+TransitGateway:
+  Type: AWS::EC2::TransitGateway
+  Properties: 
+    AmazonSideAsn: Integer
+    AutoAcceptSharedAttachments: String
+    DefaultRouteTableAssociation: String
+    DefaultRouteTablePropagation: String
+    Description: String
+    DnsSupport: String
+    Tags: 
+      - Tag
+    VpnEcmpSupport: String
+
+GatewayAttachmentPipelineProd:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties:
+    SubnetIds: 
+      - !Select [1, !Ref PipelineProd],!Select [2, !Ref PipelineProd]
+    TransitGatewayId: !Ref TransitGateway
+    VpcId: !Select [0, !Ref PipelineProd]
+
+GatewayAttachmentPipeLineDev:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties:
+    SubnetIds: 
+      - !Select [1, !Ref PipeLineDev],!Select [2, !Ref PipeLineDev]
+    TransitGatewayId: !Ref TransitGateway
+    VpcId: !Select [0, !Ref PipeLineDev]
+
+GatewayAttachmentLegacyProd:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties:
+    SubnetIds: 
+      - !Select [1, !Ref LegacyProd],!Select [2, !Ref LegacyProd]
+    TransitGatewayId: !Ref TransitGateway
+    VpcId: !Select [0, !Ref LegacyProd]
+
+GatewayAttachmentLegacyProdShared:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties:
+    SubnetIds: !Select [1, !Ref LegacyProdShared],!Select [2, !Ref LegacyProdShared]
+    TransitGatewayId: !Ref TransitGateway
+    VpcId: !Select [0, !Ref LegacyProdShared]
+
+GatewayAttachmentLegacyDev:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties:
+    SubnetIds: 
+      - !Select [1, !Ref LegacyDev],!Select [2, !Ref LegacyDev]
+    TransitGatewayId: !Ref TransitGateway
+    VpcId: !Select [0, !Ref LegacyDev]
+
+Outputs:
+  TransitGateway:
+    Description: A reference to the created TransitGateway
+    Value: !Ref GatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}-TransitGateway
+
