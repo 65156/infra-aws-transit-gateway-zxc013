@@ -1,0 +1,22 @@
+Parameters:  
+
+PipelineProd: 
+  Type: CommaDelimitedList
+  Default: "vpc-e818128d, 10.64.100.0/23, 10.64.102.0/23"
+
+PipelineDev: 
+  Type: CommaDelimitedList
+  Default: "vpc-881b11ed, 10.65.100.0/23, 10.65.102.0/23"
+
+LegacyProd: 
+  Type: CommaDelimitedList
+  Default: "vpc-0dd57f68, 10.130.100.0/24, 10.130.101.0/24"
+
+LegacyProdShared: 
+  Type: CommaDelimitedList
+  Default: "vpc-f0d57f95, 10.131.100.0/24, 10.131.101.0/24"
+
+LegacyDev: 
+  Type: CommaDelimitedList
+  Default: "vpc-bac369df, 10.129.100.0/24,10.129.101.0/24"
+
