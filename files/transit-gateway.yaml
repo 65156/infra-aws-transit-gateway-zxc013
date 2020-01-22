@@ -26,8 +26,7 @@ Resources:
         - 925446695292
         - 978308152145
       ResourceArns: 
-        Fn::GetAtt: 
-        - TransitGateway
+        !GetAtt TransitGateway.transitGatewayArn
       Tags: 
         Key: UUID
         Value: zxc013
