@@ -44,6 +44,10 @@ $accounts = @(
     #[PSCustomObject]@{Account=""; VPC=""; Subnet01=""; Subnet02=""}, 
 ) 
 
+#module dependency check and exit on crit fail
+if((Get-Module | ? Name -eq AWSPowerShell.NetCore) -eq $null)(Import-Module AWSPowerSHell.NetCore)
+if((Get-Module | ? Name -eq AWSSSO) -eq $null)(Write-Host "Must Load AWSSSO Module PS-AWS-SSO-AUTH" ; exit)
+
 #deploy transit gateway in master account
 aws-role master master
 New-CFNStack -StackName $stackname -TemplateBody (Get-Content $transitgateway -raw) -Region $region
