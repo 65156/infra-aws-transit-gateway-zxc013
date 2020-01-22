@@ -49,7 +49,7 @@ if((Get-Module | ? Name -eq AWSPowerShell.NetCore) -eq $null)(Import-Module AWSP
 if((Get-Module | ? Name -eq AWSSSO) -eq $null)(Write-Host "Must Load AWSSSO Module PS-AWS-SSO-AUTH" ; exit)
 
 #deploy transit gateway in master account
-aws-role master master
+aws-role master okta
 New-CFNStack -StackName $stackname -TemplateBody (Get-Content $transitgateway -raw) -Region $region
 
 $transitgatewayID = (Get-EC2TransitGateway -Region $region | ? Tags -like *$uuid* ).TransitGatewayId
