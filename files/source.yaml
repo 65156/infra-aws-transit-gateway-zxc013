@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Attachment for Account
+
+TransitGatewayAttachment:
+  Type: AWS::EC2::TransitGatewayAttachment
+  Properties: 
+    SubnetIds: 
+      - $subnet01
+      - $subnet02
+    TransitGatewayId: $transitgatewayid
+    VpcId: $vpc
+    Tags:
+      Key: UUID
+      Value: $uuid
+      
+Outputs:
+  TransitGatewayAttachment:
+    Description: A reference to the created TransitGatewayAttachment
+    Value: !Ref TransitGatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}
