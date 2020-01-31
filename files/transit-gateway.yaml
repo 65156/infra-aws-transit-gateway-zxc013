@@ -13,9 +13,6 @@ Resources:
       Description: Transit Gateway Deployment
       DnsSupport: enable
       VpnEcmpSupport: enable
-      Tags: 
-        Key: UUID
-        Value: zxc013
 
   TransitGatewayResourceShare:
     Type: AWS::RAM::ResourceShare
@@ -26,10 +23,10 @@ Resources:
         - 925446695292
         - 978308152145
       ResourceArns: 
-        !GetAtt TransitGateway.transitGatewayArn
-      Tags: 
-        Key: UUID
-        Value: zxc013
+        - !Join
+          - ''
+          - - 'arn:aws:ec2:ap-southeast-2:045932084931:transit-gateway/'
+            - !Ref TransitGateway
 
 Outputs:
   TransitGateway:
@@ -37,4 +34,3 @@ Outputs:
     Value: !Ref TransitGateway
     Export:
       Name: !Sub ${AWS::StackName}
-

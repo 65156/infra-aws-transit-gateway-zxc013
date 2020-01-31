@@ -7,10 +7,10 @@ Resources:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties: 
       SubnetIds: 
-        - regexsubnet01
-        - regexsubnet02
-      TransitGatewayId: regextransitgatewayid
-      VpcId: regexvpc
+        - subnet-01b0674fb500c8c54
+        - subnet-0b4fb911505d4de62
+      TransitGatewayId: tgw-0f9ff56dfe2cb1099
+      VpcId: vpc-050885cb53b9a1d39
       
 Outputs:
   TransitGatewayAttachment:
