@@ -9,7 +9,7 @@ Resources:
       SubnetIds: 
         - subnet-01b0674fb500c8c54
         - subnet-0b4fb911505d4de62
-      TransitGatewayId: tgw-0f9ff56dfe2cb1099
+      TransitGatewayId: tgw-0f5a6a47f6a25f9f9
       VpcId: vpc-050885cb53b9a1d39
       
 Outputs:

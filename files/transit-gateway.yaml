@@ -14,20 +14,6 @@ Resources:
       DnsSupport: enable
       VpnEcmpSupport: enable
 
-  TransitGatewayResourceShare:
-    Type: AWS::RAM::ResourceShare
-    Properties: 
-      AllowExternalPrincipals: True
-      Name: ResourceShare
-      Principals: 
-        - 925446695292
-        - 978308152145
-      ResourceArns: 
-        - !Join
-          - ''
-          - - 'arn:aws:ec2:ap-southeast-2:045932084931:transit-gateway/'
-            - !Ref TransitGateway
-
 Outputs:
   TransitGateway:
     Description: A reference to the created TransitGateway

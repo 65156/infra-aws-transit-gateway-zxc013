@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Deployment for OFX
+
+Resources:
+  TransitGatewayResourceShare:
+    Type: AWS::RAM::ResourceShare
+    Properties: 
+      AllowExternalPrincipals: True
+      Name: regexname
+      Principals: 
+        regexprincipals
+      ResourceArns: 
+        - regexresourcearns
