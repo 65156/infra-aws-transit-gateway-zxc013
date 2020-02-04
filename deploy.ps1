@@ -23,14 +23,8 @@
   Author: Fraser Elliot Carter Smith
 #>
 
-#configurable variables
-$projectname = "transit-gateway"
-$uuid = 'zxc013'
-$region = "ap-southeast-2"
-$masteraccountname= "Master" #Account listed in accounts array that is the target account for transit gateway
-$masteraccountid = "045932084931"
-
 #fixed variables
+$variables = . "./variables.ps1"
 $transitgateway = "./files/transit-gateway.yaml"
 $resourcesharesource = "./files/resource-share-source.yaml"
 $attachmentsource = "./files/attachment-source.yaml"
@@ -182,8 +176,6 @@ foreach($a in $accounts){
     Write-Host ""
     # Cleanup -- Remove attachment configured .yaml file
     
-
-#Approve-EC2TransitGatewayPeeringAttachment -TransitGatewayAttachmentId $transitgatewayID -Region $region
 
   }
  Write-Host ""
