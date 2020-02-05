@@ -3,7 +3,7 @@
 
 1. Configure IAM permissions across accounts to create a trust relationship between admin roles in subordinate accounts and the admin role in master account.
 
-2. Deploy Transit Gateway in master account.
+2. ensure variables file 
 ```
 aws cloudformation deploy --region ap-southeast-2 --template-file transit-gateway.yaml --stack-name transit-gateway
 ```

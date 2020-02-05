@@ -87,7 +87,7 @@ catch { Write-Host "Stack does not exist" -f green ; $stack = 1 }
   $transitgatewayARN = (Get-EC2TransitGateway -region $region | ? TransitGatewayId -eq $transitgatewayID).TransitGatewayArn
 
 #Share Transit Gateway via RAM
-Write-Host "Create Transit Gateway Resource Share" -f black -b red
+Write-Host "Create Transit Gateway Resource Share" -f black -b white
 
 Write-Host "Creating Principals List"
 $principalslist = ""
@@ -112,7 +112,7 @@ try {$resourceshareArn = (Get-RAMResourceShare -resourceowner SELF -region $regi
       if($resourceshareArn -eq $nul){ $stack = 1 } }
       catch { "Resource share does not exist...continuing" }
       try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus) }
-      catch { Write-Host "Stack does not exist" -f green  ; $stack = 1 }
+      catch { Write-Host "Stack does not exist!" -f yellow ; $stack = 1 }
       if($stackstatus -eq "CREATE_COMPLETE"){$stack = 0 ; Write-Host "Existing Stack Status: " -f yellow -b magenta -NoNewLine ; Write-Host "CREATE_COMPLETE... Skipping."} 
       if($stackstatus -ne "CREATE_COMPLETE"){$stack = 2}
 
@@ -130,7 +130,7 @@ try {$resourceshareArn = (Get-RAMResourceShare -resourceowner SELF -region $regi
           }
     
 Write-Host ""
-Write-Host "Create Transit Gateway Attachments" -f black -b red
+Write-Host "Create Transit Gateway Attachments" -f black -b white
 # Connect to each account and configure transit gateway attachment
 $stackname = "$projectname-attachment"
 $file = $attachment
@@ -157,25 +157,27 @@ foreach($a in $accounts){
     $error.clear() ; $stack = 0 ; $stackstatus = 0
  
     try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus) }
-    catch { Write-Host "Stack does not exist" -f green  ; $stack = 1 }
+    catch { Write-Host "Stack does not exist!" -f yellow ; $stack = 1 }
     if($stackstatus -eq "CREATE_COMPLETE"){$stack = 0 ; Write-Host "Existing Stack Status: " -f yellow -b magenta -NoNewLine ; Write-Host "CREATE_COMPLETE... Skipping."} 
     if($stackstatus -ne "CREATE_COMPLETE"){$stack = 2}
 
     if($stack -eq 2){
         Write-Host "Removing Failed Stack"
         Remove-CFNStack -Stackname $stackname -region $region -force  
-        Wait-CFNStack -Stackname $stackname -region $region -Status 'DELETE_COMPLETE' 
+        Wait-CFNStack -Stackname $stackname -region $region 
         } #stack exists but in bad state ->>> delete 
     if($stack -ge 1){  
         # Create Stack
         Write-Host "Creating Stack" -f black -b cyan
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $file -raw) -Region $region
-        # Wait for gateway attachment to provision
-        Wait-CFNStack -Stackname $stackname -region $region
         }
     Write-Host ""
-    # Cleanup -- Remove attachment configured .yaml file
-    
+
+    pause
+    # Cleanup -- Remove failed deployments --- not usefull if failure status reason is needed.
+    #if($stackstatus -ne "CREATE_COMPLETE"){
+    #  Write-Host "Removing Failed Stack"
+    #  Remove-CFNStack -Stackname $stackname -region $region -force  }
 
   }
  Write-Host ""
