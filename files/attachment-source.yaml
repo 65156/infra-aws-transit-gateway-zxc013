@@ -7,8 +7,7 @@ Resources:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties: 
       SubnetIds: 
-        - regexsubnet01
-        - regexsubnet02
+        regexsubnets
       TransitGatewayId: regextransitgatewayid
       VpcId: regexvpc
       

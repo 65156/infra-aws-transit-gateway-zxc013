@@ -59,7 +59,7 @@ if($stack -eq 2){
     Write-Host "Removing Failed Stack"
     Remove-CFNStack -Stackname $stackname -region $region -force  
     try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}# try wait for stack removal if needed, catch will hide error if stack does not exist.
-    if($cleanupmode -eq $true){$stack = 0}  
+    if($rollback -eq $true){$stack = 0}  
   }
 if($stack -ge 1){# Create Stack if $stack = 1 or more 
     $error.clear()
@@ -110,20 +110,21 @@ Write-Host "Creating Resource Share"
           $goodvalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS")
           foreach($v in $goodvalues){if($v -eq $stackstatus){ $stack = 0 ; break } else { $stack = 2 } }}
       if($stack -eq 0){ 
-        # Stack already deployed or in process of being deployed
+        # Stack already deployed or in process of being deployed -> Skip
         Write-Host "Existing Stack Status:" -f cyan -NoNewLine ; 
         Write-Host " $stackstatus... Skipping." ; continue } # stack deployment already in progress, skip iteration
       if($stack -eq 2){
-          # Stack exists in bad state ->>> Delete it 
+          # Stack exists in a bad state -> Delete  
           Write-Host "Removing Failed Stack"
           Remove-CFNStack -Stackname $stackname -region $region -force  
-          try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}# try wait for stack removal if needed, catch will hide error if stack does not exist.
+          try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # try wait for stack removal if needed, catch will hide error if stack does not exist.
           }
-      if($stack -ge 1){# Create Stack if $stack = 1 or more 
+      if($stack -ge 1){ # Stack does not exist -> Deploy 
           $error.clear()
+          # Attempts to validate the CF template.
           Write-host "Validating CF Template" -f cyan
           Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
-          if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } # attempts to validate the CF template.
+          if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
           if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
           Write-Host "Creating Stack" -f black -b cyan
           New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
@@ -139,31 +140,36 @@ $infile = $attachmentsource
 $outfile = $attachment
 
 foreach($a in $accounts){   
-    $skip = $a.Skip ; if($skip -eq $true){continue} #skips processing 
+    $skip = $a.Skip ; if($skip -eq $true){continue} # Skip processing 
     $account = $a.account
-    
+    $subnets = $a.subnets
+
     # Connect to Account
     Write-Host "Connecting to account: $account" -f cyan 
     Switch-RoleAlias $account admin 
 
-    # accept resource share ARN
+    # Build Subnet Array 
+    foreach($sub in $subnets){
+      $subnetlist += "- $sub `n"+"        "
+      }
+
+    # Accept resource share ARN
     try {Get-RAMResourceShareInvitation -region $region | ? ResourceShareName -like $resourcesharename | Confirm-RAMResourceShareInvitation -region $region ; Write-Host "Accepting Share" -f black -b cyan}
     catch { "Resource already accepted or does not exist...continuing" -f yellow }
-    # Find and replace vpc, subnet01, subnet02, project uuid and output to attachment.yaml
+    # Find and replace vpc, Subnets, project uuid and output to attachment.yaml
     Write-Host "Writing $outfile file" -f green
     (Get-Content $infile) | Foreach-Object {
         $_ -replace("regextransitgatewayID","$transitgatewayID") `
            -replace("regexvpc",$a.VPC) `
-           -replace("regexsubnet01",$a.Subnet01) `
-           -replace("regexsubnet02",$a.Subnet02) `
+           -replace("regexsubnets",$subnetlist) `
            -replace("regexuuid",$uuid)
         } | Set-Content $outfile -force
 
     $error.clear() ; $stack = 0 ; $stackstatus = 0
 
     try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
-    catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-    if($redeploy -eq $true){$stack = 2} #tears down the stack and redeploys if set
+    catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # Set stack value to 1 if first deployment
+    if($redeploy -eq $true){$stack = 2} # Tears down the stack and redeploys if set
     if($stack -eq 0){
         # If stack exists, get the stack deployment status and check against google values
         # If match , set stack value to 0 -> skip iteration, else set stack value to 2.
@@ -177,13 +183,14 @@ foreach($a in $accounts){
         # Stack exists in bad state ->>> Delete it 
         Write-Host "Removing Failed Stack"
         Remove-CFNStack -Stackname $stackname -region $region -force  
-        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}# try wait for stack removal if needed, catch will hide error if stack does not exist.
+        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # Try wait for stack removal if needed, catch will hide error if stack does not exist.
         }
-    if($stack -ge 1){# Create Stack if $stack = 1 or more 
+    if($stack -ge 1){ # Create Stack if $stack = 1 or more 
         $error.clear()
+        # Attempts to validate the CF template.
         Write-host "Validating CF Template" -f cyan
         Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
-        if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } # attempts to validate the CF template.
+        if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack" -f black -b cyan
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
