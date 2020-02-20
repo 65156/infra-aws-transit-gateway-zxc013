@@ -43,12 +43,13 @@ Write-Host " Deploying Transit Gateway." -f white -b magenta
 Write-Host "---------------------------" 
 Write-Host ""
 
+$stackname = $projectname
+
 # Deploy transit gateway in master account
 Write-Host "Processing Transit Gateway" -f black -b white
-Write-Host "Connecting to account: $masteraccount" -f Magenta 
+Write-Host "Connecting to account: $masteraccount" -f white
 Switch-RoleAlias $masteraccount okta
 
-$stackname = $projectname
 $phase = 1
 $account = "Master"
 $infile = $transitgatewaysource
@@ -71,12 +72,11 @@ Write-Host "Writing $outfile file" -f green
         foreach($v in $goodvalues){if($v -eq $stackstatus){ $stack = 0 ; break } else { $stack = 2 } }}
     if($stack -eq 0){ 
       # Stack already deployed or in process of being deployed -> Skip
-      Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; 
-      try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
-      Write-Host " $stackstatus" } # stack deployment already in progress, skip iteration
+      Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus" 
+      try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # stack deployment already in progress, skip iteration
     if($stack -eq 2){
         # Stack exists in a bad state -> Delete  
-        Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; Write-Host " $stackstatus"
+        Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus"
         Remove-CFNStack -Stackname $stackname -region $region -force  
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # try wait for stack removal if needed, catch will hide error if stack does not exist.
         if($rollback -eq $true){ $stack = 0 } #rolling back break loop
@@ -92,7 +92,6 @@ Write-Host "Writing $outfile file" -f green
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
         try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 ; Write-Host " $stackname"-f black -b white } catch { Write-Host " $stackname failed" -f black -b red}
         }
-Write-Host ""
 
 #get variables to create yaml files for RAM and Transit Gateway attachments Cloud Formations
 $transitgatewayID = (Get-CFNExport -Region $region | ? Name -eq $stackname).Value
@@ -130,14 +129,13 @@ Write-Host "Writing $outfile file" -f green
         # If match , set stack value to 0 -> skip iteration, else set stack value to 2.
         $goodvalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS")
         foreach($v in $goodvalues){if($v -eq $stackstatus){ $stack = 0 ; break } else { $stack = 2 } }}
-    if($stack -eq 0){ 
-      # Stack already deployed or in process of being deployed -> Skip
-      Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; 
-      try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
-      Write-Host " $stackstatus" } # stack deployment already in progress, skip iteration
+        if($stack -eq 0){ 
+          # Stack already deployed or in process of being deployed -> Skip
+          Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus" 
+          try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # 
     if($stack -eq 2){
         # Stack exists in a bad state -> Delete  
-        Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; Write-Host " $stackstatus"
+        Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus"
         Remove-CFNStack -Stackname $stackname -region $region -force  
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # try wait for stack removal if needed, catch will hide error if stack does not exist.
         if($rollback -eq $true){ $stack = 0 } #rolling back break loop
@@ -166,7 +164,7 @@ foreach($a in $accounts){
     $phase = 3
 
     # Connect to Account
-    Write-Host "Connecting to account: $account" -f Magenta 
+    Write-Host "Connecting to account: $account" -f white 
     Switch-RoleAlias $account admin 
 
     # Build Subnet Array 
@@ -200,14 +198,13 @@ foreach($a in $accounts){
             # If match , set stack value to 0 -> skip iteration, else set stack value to 2.
             $goodvalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS")
             foreach($v in $goodvalues){if($v -eq $stackstatus){ $stack = 0 ; break } else { $stack = 2 } }}
-        if($stack -eq 0){ 
-          # Stack already deployed or in process of being deployed -> Skip
-          Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; 
-          try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
-          Write-Host " $stackstatus" } # stack deployment already in progress, skip iteration
+            if($stack -eq 0){ 
+              # Stack already deployed or in process of being deployed -> Skip
+              Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus" 
+              try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # 
         if($stack -eq 2){
             # Stack exists in a bad state -> Delete  
-            Write-Host "Existing Stack Found - Status:" -f black -b magenta -NoNewLine ; Write-Host " $stackstatus"
+            Write-Host "Existing Stack Found - Status:" -f white -b magenta -NoNewLine ; Write-Host " $stackstatus"
             Remove-CFNStack -Stackname $stackname -region $region -force  
             try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # try wait for stack removal if needed, catch will hide error if stack does not exist.
             if($rollback -eq $true){ $stack = 0 } #rolling back break loop
