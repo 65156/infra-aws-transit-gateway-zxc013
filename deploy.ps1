@@ -33,9 +33,9 @@ $attachmentsource = "./files/attachment-source.yaml"
 $transitgateway = "./files/transit-gateway.yaml"
 $attachment = "./files/attachment.yaml"
 $resourceshare = "./files/resource-share.yaml"
-$rollbackfile = "./files/rollback.csv"
-try{$rollbackhash = Import-csv $rollbackfile} 
-  catch { $rollbackhash = @() } #try import existing rollback file else create a new array.
+#$rollbackfile = "./files/rollback.csv"
+#try{$rollbackhash = Import-csv $rollbackfile} 
+# catch { $rollbackhash = @() } #try import existing rollback file else create a new array.
 
 #Script Begin
 Write-Host "---------------------------" 
@@ -226,7 +226,7 @@ foreach($a in $accounts){
     Write-Host ""
 
 }
-$rollbackhash | Export-CSV $rollbackfile -force 
+#$rollbackhash | Export-CSV $rollbackfile -force 
 
 Write-Host ""
 Write-Host "---------------------------" 
