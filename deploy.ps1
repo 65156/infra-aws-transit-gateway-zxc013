@@ -23,6 +23,18 @@
   Author: Fraser Elliot Carter Smith
 #>
 
+#fixed variables
+$variables = . "./variables.ps1"
+$masteraccount = ($accounts | ? Master -eq $true).Account
+$masteraccountID = ($accounts | ? Account -eq $true).AccountId   
+$transitgatewaysource = "./files/transit-gateway-source.yaml"
+$resourcesharesource = "./files/resource-share-source.yaml"
+$attachmentsource = "./files/attachment-source.yaml"
+$transitgateway = "./files/transit-gateway.yaml"
+$attachment = "./files/attachment.yaml"
+$resourceshare = "./files/resource-share.yaml"
+$rollbackhash = @()
+
 #Script Begin
 Write-Host "---------------------------" -f black -b green
 Write-Host " Deploying Transit Gateway." -f black -b green
@@ -30,17 +42,22 @@ Write-Host "---------------------------" -f black -b green
 Write-Host ""
 
 # Deploy transit gateway in master account
-Write-Host "Create Transit Gateway" -f black -b red
-Write-Host "Connecting to account: $masteraccountname" -f cyan 
-Switch-RoleAlias $masteraccountname okta
+Write-Host "Processing Transit Gateway" -f black -b red
+Write-Host "Connecting to account: $masteraccount" -f cyan 
+Switch-RoleAlias $masteraccount okta
 
-# Check if stack exists 
 $stackname = $projectname
+$phase = 1
+
+$infile = $transitgatewaysource
 $outfile = $transitgateway
+Write-Host "Writing $outfile file" -f green
+(Get-Content $infile) | Foreach-Object {
+    $_ -replace("regexbgpasn","$bgpASN") 
+    } | Set-Content $outfile -force
 
 
 $error.clear() ; $stack = 0 ; $stackstatus = 0
-
 try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
 catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
 if($redeploy -eq $true){$stack = 2} #tears down the stack and redeploys if set
@@ -53,10 +70,11 @@ if($stack -eq 0){
 if($stack -eq 0){ 
   # Stack already deployed or in process of being deployed
   Write-Host "Existing Stack Status:" -f cyan -NoNewLine ; 
-  Write-Host " $stackstatus... Skipping." ; continue } # stack deployment already in progress, skip iteration
+  try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
+  Write-Host " $stackstatus... Skipping." } # stack deployment already in progress, skip iteration
 if($stack -eq 2){
     # Stack exists in bad state ->>> Delete it 
-    Write-Host "Removing Failed Stack"
+    Write-Host "Removing Stack"
     Remove-CFNStack -Stackname $stackname -region $region -force  
     try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}# try wait for stack removal if needed, catch will hide error if stack does not exist.
     if($rollback -eq $true){$stack = 0}  
@@ -69,38 +87,49 @@ if($stack -ge 1){# Create Stack if $stack = 1 or more
     if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
     Write-Host "Creating Stack" -f black -b cyan
     New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-    }
+    try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
+  
+  }
 
   #get variables to create yaml files for RAM and Transit Gateway attachments Cloud Formations
   $transitgatewayID = (Get-CFNExport -Region $region | ? Name -eq $stackname).Value
   $transitgatewayARN = (Get-EC2TransitGateway -region $region | ? TransitGatewayId -eq $transitgatewayID).TransitGatewayArn
 
-#Share Transit Gateway via RAM
-Write-Host "Processing Transit Gateway Resource Share" -f black -b white
+  
+  $stackstatus > $null
+  #roll back entry
+  $obj = [PSCustomObject]@{
+    Phase = "$Phase"
+    Stackname = "$Stackname"
+    StackStatus = "$stackstatus"
+    TGWID = "$transitgatewayID"
+    TGWARN = "$transitgatewayARN"
+    }
+  $rollbackhash += $obj # Add custom object to rollback array
 
-Write-Host "Creating Principals List"
+#Share Transit Gateway via RAM
+Write-Host "Processing Resource Share" -f black -b white
+
+#Create principals list
 $principalslist = ""
 foreach($a in $accounts){
   $accountID = $a.AccountId 
-  $skip = $a.Skip ; if($skip -eq $true){continue}
+  $skip = $a.Master ; if($skip -eq $true){continue} #skips adding master account ID to principals list
   $principalslist += "- $accountID `n"+"        "}
 
-$outfile = $resourceshare
-$tgwstackname = $stackname
-$resourcesharename = $tgwstackname
 $stackname = "$projectname-share"
-Write-Host "Writing $outfile file" -f green
+$resourcesharename = $stackname #refernced later to accept the resource share in other accounts
 
-(Get-Content $resourcesharesource) | Foreach-Object {
+$infile = $resourcesharesource
+$outfile = $resourceshare
+Write-Host "Writing $outfile file" -f green
+(Get-Content $infile) | Foreach-Object {
     $_ -replace("regexprincipals","$principalslist") `
        -replace("regexname",$stackname) `
        -replace("regexresourcearns",$transitgatewayARN) 
     } | Set-Content $outfile -force
 
-
-Write-Host "Creating Resource Share"  
       $error.clear() ; $stack = 0 ; $stackstatus = 0
-
       try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
       catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
       if($redeploy -eq $true){$stack = 2} #tears down the stack and redeploys if set
@@ -112,7 +141,8 @@ Write-Host "Creating Resource Share"
       if($stack -eq 0){ 
         # Stack already deployed or in process of being deployed -> Skip
         Write-Host "Existing Stack Status:" -f cyan -NoNewLine ; 
-        Write-Host " $stackstatus... Skipping." ; continue } # stack deployment already in progress, skip iteration
+        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
+        Write-Host " $stackstatus... Skipping." } # stack deployment already in progress, skip iteration
       if($stack -eq 2){
           # Stack exists in a bad state -> Delete  
           Write-Host "Removing Failed Stack"
@@ -128,19 +158,18 @@ Write-Host "Creating Resource Share"
           if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
           Write-Host "Creating Stack" -f black -b cyan
           New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+          try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
           }
-
-
     
 Write-Host ""
-Write-Host "Create Transit Gateway Attachments" -f black -b white
+Write-Host "Processing Attachments" -f black -b white
 # Connect to each account and configure transit gateway attachment
 $stackname = "$projectname-attachment"
 $infile = $attachmentsource
 $outfile = $attachment
 
 foreach($a in $accounts){   
-    $skip = $a.Skip ; if($skip -eq $true){continue} # Skip processing 
+    $skip = $a.Master ; if($skip -eq $true){continue} # Skip processing master account
     $account = $a.account
     $subnets = $a.subnets
 
@@ -155,7 +184,7 @@ foreach($a in $accounts){
 
     # Accept resource share ARN
     try {Get-RAMResourceShareInvitation -region $region | ? ResourceShareName -like $resourcesharename | Confirm-RAMResourceShareInvitation -region $region ; Write-Host "Accepting Share" -f black -b cyan}
-    catch { "Resource already accepted or does not exist...continuing" -f yellow }
+    catch { Write-Host "Resource already accepted or does not exist...continuing" -f yellow }
     # Find and replace vpc, Subnets, project uuid and output to attachment.yaml
     Write-Host "Writing $outfile file" -f green
     (Get-Content $infile) | Foreach-Object {
@@ -178,6 +207,7 @@ foreach($a in $accounts){
     if($stack -eq 0){ 
       # Stack already deployed or in process of being deployed
       Write-Host "Existing Stack Status:" -f cyan -NoNewLine ; 
+      try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
       Write-Host " $stackstatus... Skipping." ; continue } # stack deployment already in progress, skip iteration
     if($stack -eq 2){
         # Stack exists in bad state ->>> Delete it 
@@ -194,6 +224,7 @@ foreach($a in $accounts){
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack" -f black -b cyan
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
         }
     Write-Host ""
   }
