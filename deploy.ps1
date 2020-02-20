@@ -77,7 +77,7 @@ if($stack -eq 2){
     Write-Host "Removing Stack"
     Remove-CFNStack -Stackname $stackname -region $region -force  
     try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}# try wait for stack removal if needed, catch will hide error if stack does not exist.
-    if($rollback -eq $true){$stack = 0}  
+    if($rollback -eq $true){ $stack = 0 }  
   }
 if($stack -ge 1){# Create Stack if $stack = 1 or more 
     $error.clear()
@@ -97,13 +97,13 @@ if($stack -ge 1){# Create Stack if $stack = 1 or more
 
   
   $stackstatus > $null
-  #roll back entry
+  #Create Roll Back Entry
   $obj = [PSCustomObject]@{
     Phase = "$Phase"
+    Account = "$Account"
+    Region = "$Region"
     Stackname = "$Stackname"
     StackStatus = "$stackstatus"
-    TGWID = "$transitgatewayID"
-    TGWARN = "$transitgatewayARN"
     }
   $rollbackhash += $obj # Add custom object to rollback array
 
@@ -118,6 +118,7 @@ foreach($a in $accounts){
   $principalslist += "- $accountID `n"+"        "}
 
 $stackname = "$projectname-share"
+$phase = 2
 $resourcesharename = $stackname #refernced later to accept the resource share in other accounts
 
 $infile = $resourcesharesource
@@ -133,6 +134,7 @@ Write-Host "Writing $outfile file" -f green
       try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
       catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
       if($redeploy -eq $true){$stack = 2} #tears down the stack and redeploys if set
+        if($rollback -eq $true){$stack = 2}
       if($stack -eq 0){
           # If stack exists, get the stack deployment status and check against google values
           # If match , set stack value to 0 -> skip iteration, else set stack value to 2.
@@ -148,6 +150,7 @@ Write-Host "Writing $outfile file" -f green
           Write-Host "Removing Failed Stack"
           Remove-CFNStack -Stackname $stackname -region $region -force  
           try{ Wait-CFNStack -Stackname $stackname -region $region } catch {} # try wait for stack removal if needed, catch will hide error if stack does not exist.
+          if($rollback -eq $true){ $stack = 0 } #rolling back break loop
           }
       if($stack -ge 1){ # Stack does not exist -> Deploy 
           $error.clear()
@@ -160,11 +163,24 @@ Write-Host "Writing $outfile file" -f green
           New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
           try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
           }
-    
+
+  $stackstatus > $null
+  #Create Roll Back Entry
+  $obj = [PSCustomObject]@{
+    Phase = "$Phase"
+    Account = "$Account"
+    Region = "$Region"
+    Stackname = "$Stackname"
+    StackStatus = "$stackstatus"
+    }
+  $rollbackhash += $obj # Add custom object to rollback array
+          
+
 Write-Host ""
 Write-Host "Processing Attachments" -f black -b white
 # Connect to each account and configure transit gateway attachment
 $stackname = "$projectname-attachment"
+$phase = 3
 $infile = $attachmentsource
 $outfile = $attachment
 
@@ -227,7 +243,23 @@ foreach($a in $accounts){
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}
         }
     Write-Host ""
+
+    $stackstatus > $null
+    #Create Roll Back Entry
+    $obj = [PSCustomObject]@{
+      Phase = "$Phase"
+      Account = "$Account"
+      Region = "$Region"
+      Stackname = "$Stackname"
+      StackStatus = "$stackstatus"
+      TGWID = "$null"
+      TGWARN = "$null"
+      }
+    $rollbackhash += $obj # Add custom object to rollback array
+  
   }
+
+  $rollbackhash | Export-CSV $rollbackfile -force
 Remove-Item $attachment -force 
 Remove-Item $resourceshare -force
 
