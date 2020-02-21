@@ -84,13 +84,13 @@ Write-Host "Writing $outfile file" -f green
     if($stack -ge 1){ # Stack does not exist -> Deploy 
         $error.clear()
         # Attempts to validate the CF template.
-        Write-host "Validating CF Template"
+        Write-host "Validating CF Template: " -nonewline ; 
         Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
         if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
-        Write-Host "Creating Stack" -f White -b Magenta -NoNewLine ; 
+        Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 ; Write-Host " $stackname"-f black -b white } catch { Write-Host " $stackname failed" -f black -b red}
+        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 
 #get variables to create yaml files for RAM and Transit Gateway attachments Cloud Formations
@@ -143,13 +143,13 @@ Write-Host "Writing $outfile file" -f green
     if($stack -ge 1){ # Stack does not exist -> Deploy 
         $error.clear()
         # Attempts to validate the CF template.
-        Write-host "Validating CF Template"
+        Write-host "Validating CF Template: " -nonewline ; 
         Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
         if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
-        Write-Host "Creating Stack" -f White -b Magenta -NoNewLine ; 
+        Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 ; Write-Host " $stackname"-f black -b white } catch { Write-Host " $stackname failed" -f black -b red}
+        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 Write-Host ""
 
@@ -212,13 +212,13 @@ foreach($a in $accounts){
         if($stack -ge 1){ # Stack does not exist -> Deploy 
             $error.clear()
             # Attempts to validate the CF template.
-            Write-host "Validating CF Template"
+            Write-host "Validating CF Template: " -nonewline ; 
             Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
             if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
             if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
-            Write-Host "Creating Stack" -f White -b Magenta -NoNewLine ; 
+            Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
             New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-            try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 ; Write-Host " $stackname"-f black -b white } catch { Write-Host " $stackname failed" -f black -b red}
+            try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
             }
     Write-Host ""
 
@@ -229,3 +229,5 @@ Write-Host ""
 Write-Host "---------------------------" 
 Write-Host "Script Processing Complete." -f white -b magenta
 Write-Host "---------------------------" 
+Write-Host ""
+Write-Host ""
