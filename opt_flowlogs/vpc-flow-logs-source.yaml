@@ -1,0 +1,94 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Enable VPC Flow Logs, Create Cloudwatch log group, create role with inline
+  policy to export flow logs to log group
+Parameters:
+  VPCName:
+    Default: regexvpcid
+    Type: AWS::EC2::VPC::Id
+    Description: Select VPC
+    AllowedPattern: ".+"
+  LogRetention:
+    Type: Number
+    Description: How long to retain VPC Flow Logs in Cloudwatch
+    Default: regexretention
+    AllowedValues:
+    - 1
+    - 3
+    - 5
+    - 7
+    - 14
+    - 30
+    - 60
+    - 90
+    - 365
+    - 730
+    - 1826
+    - 3652
+Resources:
+  VPCFlowLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Join:
+        - ''
+        - - vpcflowlogs-
+          - Ref: VPCName
+      RetentionInDays:
+        Ref: LogRetention
+  VPCFlowLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - vpc-flow-logs.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      RoleName:
+        Fn::Join:
+        - ''
+        - - vpcFlowLogsRole-
+          - Ref: VPCName
+  VPCFlowLogsRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        Fn::Join:
+        - ''
+        - - VPCFlowLogs-
+          - Ref: VPCName
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - logs:DescribeLogGroups
+          - logs:DescribeLogStreams
+          Resource:
+            Fn::GetAtt:
+            - VPCFlowLogsGroup
+            - Arn
+      Roles:
+      - Ref: VPCFlowLogsRole
+  EnableVPCFlowLog:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn:
+        Fn::GetAtt:
+        - VPCFlowLogsRole
+        - Arn
+      LogGroupName:
+        Fn::Join:
+        - ''
+        - - vpcflowlogs-
+          - Ref: VPCName
+      ResourceId:
+        Ref: VPCName
+      ResourceType: VPC
+      TrafficType: ALL
