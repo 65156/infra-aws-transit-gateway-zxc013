@@ -34,9 +34,6 @@ $attachmentsource = "./files/attachment-source.yaml"
 $transitgateway = "./files/transit-gateway.yaml"
 $attachment = "./files/attachment.yaml"
 $resourceshare = "./files/resource-share.yaml"
-#$rollbackfile = "./files/rollback.csv"
-#try{$rollbackhash = Import-csv $rollbackfile} 
-# catch { $rollbackhash = @() } #try import existing rollback file else create a new array.
 
 #Script Begin
 Write-Host "---------------------------" 
@@ -44,22 +41,21 @@ Write-Host " Deploying Transit Gateway." -f white -b magenta
 Write-Host "---------------------------" 
 Write-Host ""
 
-$stackname = $projectname
-
 # Deploy transit gateway in master account
 Write-Host "Processing Transit Gateway" -f black -b white
 Write-Host "Connecting to account: $masteraccount" -f white
 Switch-RoleAlias $masteraccount $masterrole
 
-$phase = 1
-#$account = "Master"
+$stackname = $projectname
 $infile = $transitgatewaysource
 $outfile = $transitgateway
+
+
 Write-Host "Writing $outfile file" -f green
+Write-Host "Stackname $stackname" -f Magenta
 (Get-Content $infile) | Foreach-Object {
     $_ -replace("regexbgpasn","$bgpASN") 
     } | Set-Content $outfile -force
-
 
     $error.clear() ; $stack = 0 ; $stackstatus = 0
     try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
@@ -104,20 +100,20 @@ $transitgatewayARN = (Get-EC2TransitGateway -region $region | ? TransitGatewayId
 
 #Share Transit Gateway via RAM
 Write-Host "Processing Resource Share" -f black -b white
-$principalslist = "" #Create principals list
 
+$principalslist = "" #Create principals list
 foreach($a in $accounts){
   $accountID = $a.AccountId 
   $skip = $a.Master ; if($skip -eq $true){continue} #skips adding master account ID to principals list
   $principalslist += "- $accountID `n"+"        "}
 
 $stackname = "$projectname-share"
-$phase = 2
 $resourcesharename = $stackname #refernced later to accept the resource share in other accounts
-
 $infile = $resourcesharesource
 $outfile = $resourceshare
+
 Write-Host "Writing $outfile file" -f green
+Write-Host "Stackname $stackname" -f Magenta
 (Get-Content $infile) | Foreach-Object {
     $_ -replace("regexprincipals","$principalslist") `
        -replace("regexname",$stackname) `
@@ -170,7 +166,6 @@ foreach($a in $accounts){
     $subnets = $a.subnets
     $vpc = $a.vpc
     $stackname = "$projectname-attachment-$vpc"
-    $phase = 3
 
     # Connect to Account
     Write-Host "Connecting to account: $account" -f white 
@@ -189,6 +184,7 @@ foreach($a in $accounts){
     $infile = $attachmentsource
     $outfile = $attachment
     Write-Host "Writing $outfile file" -f green
+    Write-Host "Stackname $stackname" -f Magenta
     (Get-Content $infile) | Foreach-Object {
         $_ -replace("regextransitgatewayID","$transitgatewayID") `
            -replace("regextagname",$Account)`
