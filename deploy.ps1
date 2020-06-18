@@ -26,7 +26,8 @@
 #fixed variables
 $variables = . "./variables.ps1"
 $masteraccount = ($accounts | ? Master -eq $true).Account
-$masteraccountID = ($accounts | ? Account -eq $true).AccountId   
+$masteraccountID = ($accounts | ? Master -eq $true).AccountId   
+$masterrole = ($accounts | ? Master -eq $true).Role
 $transitgatewaysource = "./files/transit-gateway-source.yaml"
 $resourcesharesource = "./files/resource-share-source.yaml"
 $attachmentsource = "./files/attachment-source.yaml"
@@ -48,10 +49,10 @@ $stackname = $projectname
 # Deploy transit gateway in master account
 Write-Host "Processing Transit Gateway" -f black -b white
 Write-Host "Connecting to account: $masteraccount" -f white
-Switch-RoleAlias $masteraccount okta
+Switch-RoleAlias $masteraccount $masterrole
 
 $phase = 1
-$account = "Master"
+#$account = "Master"
 $infile = $transitgatewaysource
 $outfile = $transitgateway
 Write-Host "Writing $outfile file" -f green
@@ -165,6 +166,7 @@ Write-Host "Processing Attachments" -f black -b white
 foreach($a in $accounts){   
     $skip = $a.Master ; if($skip -eq $true){continue} # Skip processing master account
     $account = $a.account
+    $role = $a.Role
     $subnets = $a.subnets
     $vpc = $a.vpc
     $stackname = "$projectname-attachment-$vpc"
@@ -172,7 +174,7 @@ foreach($a in $accounts){
 
     # Connect to Account
     Write-Host "Connecting to account: $account" -f white 
-    Switch-RoleAlias $account admin 
+    Switch-RoleAlias $account $role 
 
     # Build Subnet Array 
     $subnetlist = $null
