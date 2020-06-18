@@ -52,7 +52,7 @@ $outfile = $transitgateway
 
 
 Write-Host "Writing $outfile file" -f green
-Write-Host "Stackname $stackname" -f Magenta
+Write-Host "Processing $stackname" -f Magenta
 (Get-Content $infile) | Foreach-Object {
     $_ -replace("regexbgpasn","$bgpASN") 
     } | Set-Content $outfile -force
@@ -113,7 +113,7 @@ $infile = $resourcesharesource
 $outfile = $resourceshare
 
 Write-Host "Writing $outfile file" -f green
-Write-Host "Stackname $stackname" -f Magenta
+Write-Host "Processing $stackname" -f Magenta
 (Get-Content $infile) | Foreach-Object {
     $_ -replace("regexprincipals","$principalslist") `
        -replace("regexname",$stackname) `
@@ -180,11 +180,12 @@ foreach($a in $accounts){
     # Accept resource share ARN
     try {Get-RAMResourceShareInvitation -region $region | ? ResourceShareName -like $resourcesharename | Confirm-RAMResourceShareInvitation -region $region ; Write-Host "Accepting Share" -f black -b Magenta}
     catch { Write-Host "Error or Already Accepted!"}
+
     # Find and replace vpc, Subnets, project uuid and output to attachment.yaml
     $infile = $attachmentsource
     $outfile = $attachment
     Write-Host "Writing $outfile file" -f green
-    Write-Host "Stackname $stackname" -f Magenta
+    Write-Host "Processing $stackname" -f Magenta
     (Get-Content $infile) | Foreach-Object {
         $_ -replace("regextransitgatewayID","$transitgatewayID") `
            -replace("regextagname",$Account)`

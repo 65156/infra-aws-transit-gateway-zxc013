@@ -10,7 +10,7 @@ $accounts = @(
     #accounts are dependant on account names configured in PS-AWS-SSO-AUTH.psm1
     [PSCustomObject]@{Account="Master"; Role="okta" ; AccountID="045932084931"; Master=$true},
     [PSCustomObject]@{Account="PipelineProd"; Role="admin" ; AccountID="479125032639" ; VPC="vpc-e818128d"; Subnets=("subnet-353ec243","subnet-a9837cf0","subnet-e111c085")},
-    [PSCustomObject]@{Account="PipelineProd"; Role="admin" ; AccountID="479125032639" ; VPC="vpc-bba786de"; Subnets=("subnet-c1d5d2b6","subnet-eb2137ad")},
+   # [PSCustomObject]@{Account="PipelineProd"; Role="admin" ; AccountID="479125032639" ; VPC="vpc-bba786de"; Subnets=("subnet-c1d5d2b6","subnet-eb2137ad")}, #shared service vpc (causes routing issue)
     [PSCustomObject]@{Account="PipelineDev"; Role="admin" ; AccountID="995405243001" ; VPC="vpc-881b11ed"; Subnets=("subnet-e73dc191","subnet-82ee3fe6","subnet-21837c78")},
     [PSCustomObject]@{Account="LegacyProd"; Role="admin" ; AccountID="368940151251" ; VPC="vpc-0dd57f68"; Subnets=("subnet-f7894f81","subnet-eb05dd8f","subnet-28834671")},
     [PSCustomObject]@{Account="LegacyProd"; Role="admin" ; AccountID="368940151251" ; VPC="vpc-f0d57f95"; Subnets=("subnet-198b4d6f","subnet-1e03db7a","subnet-7f824726")},
