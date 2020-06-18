@@ -11,7 +11,7 @@
 #                                                                         #                                                        
 <#          
 .DESCRIPTION
-  <Deploys Transit Gateway and Transit Gateway Attachments in Child Accounts>
+  <Deploys Flow Logs for Transit Gateway>
 .INPUTS
   <Modules: PS-AWS-SSO-AUTH
  # Files

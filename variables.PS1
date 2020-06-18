@@ -3,7 +3,8 @@ $projectname = "transit-gateway"
 $bgpASN = "65100"
 $uuid = 'zxc013'
 $region = "ap-southeast-2"
-$rollback = $false
+$update = $true # true -> instructs to update if not a new deployment
+$teardown = $false
 
 $accounts = @( 
     #accounts are dependant on account names configured in PS-AWS-SSO-AUTH.psm1
