@@ -10,7 +10,6 @@ Resources:
       Name: transit-gateway-share
       Principals: 
         - 479125032639 
-        - 479125032639 
         - 995405243001 
         - 368940151251 
         - 368940151251 

@@ -3,7 +3,7 @@ $projectname = "transit-gateway"
 $bgpASN = "65100"
 $uuid = 'zxc013'
 $region = "ap-southeast-2"
-$update = $true # true -> instructs to update if not a new deployment
+# $update = $true # true -> instructs to update if not a new deployment
 $teardown = $false
 
 $accounts = @( 
