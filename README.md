@@ -1,7 +1,5 @@
 # infra-aws-transit-gateway-zxc013
-
-## Core AWS Cloud Routing Infrastructure
-This Repository manages the Deployment of Transit Gateway, TG Attachments and RAM Sharing to Child accounts.
+This Repository manages the Deployment of (Core AWS Cloud Routing Infrastructure) including Transit Gateway, TG Attachments and RAM Sharing to Child accounts.
 
 ## Prerequisites
 PSCore6, OFX-Tools
