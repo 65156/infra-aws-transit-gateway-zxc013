@@ -59,8 +59,8 @@ Write-Host "Processing $stackname" -f Magenta
     $error.clear() ; $stack = 0 ; $stackstatus = 0 ; $changesetstatus = 0
     try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
     catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-    if($update -eq $true){$stack = 2}
-    if($teardown -eq $true){$stack = 2}
+    #if($update -eq $true){$stack = 2} 
+    #if($teardown -eq $true){$stack = 2}
     if($stack -eq 0){
       # Checks if stack exists and if changes have been made
       if($stackstatus -eq "CREATE_IN_PROGRESS"){
@@ -125,7 +125,7 @@ Write-Host "Processing $stackname" -f Magenta
     $error.clear() ; $stack = 0 ; $stackstatus = 0 ; $changesetstatus = 0
     try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
     catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-    if($update -eq $true){$stack = 2} #updates
+    if($update -eq $true){$stack = 2}
     if($teardown -eq $true){$stack = 2}
     if($stack -eq 0){
       # Checks if stack exists and if changes have been made
