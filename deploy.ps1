@@ -76,10 +76,10 @@ Write-Host "Processing $stackname" -f Magenta
         $stack = 0 
         if($teardown -eq $true){
           Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-          # Remove-CFNStack -Stackname $stackname -region $region -force
+           Remove-CFNStack -Stackname $stackname -region $region -force
           } else { 
           Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-          # Update-CFNStack -Stackname $stackname -region $region -force
+           Update-CFNStack -Stackname $stackname -region $region -force
           } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
 
@@ -91,7 +91,7 @@ Write-Host "Processing $stackname" -f Magenta
         if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ; continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-        # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
         try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 Write-Host ""
@@ -142,10 +142,10 @@ Write-Host "Processing $stackname" -f Magenta
         $stack = 0 
         if($teardown -eq $true){ 
           Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-          # Remove-CFNStack -Stackname $stackname -region $region -force
+           Remove-CFNStack -Stackname $stackname -region $region -force
         } else { 
           Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-          # Update-CFNStack -Stackname $stackname -region $region -force
+           Update-CFNStack -Stackname $stackname -region $region -force
           } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
     if($stack -ge 1){ # Stack does not exist -> Deploy 
@@ -156,7 +156,7 @@ Write-Host "Processing $stackname" -f Magenta
         if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-        # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
         try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 Write-Host ""
@@ -219,10 +219,10 @@ foreach($a in $accounts){
             $stack = 0 
             if($teardown -eq $true){ 
               Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-              # Remove-CFNStack -Stackname $stackname -region $region -force
+               Remove-CFNStack -Stackname $stackname -region $region -force
               } else { 
               Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-              # Update-CFNStack -Stackname $stackname -region $region -force
+               Update-CFNStack -Stackname $stackname -region $region -force
             } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
         if($stack -ge 1){ # Stack does not exist -> Deploy 
@@ -233,7 +233,7 @@ foreach($a in $accounts){
             if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
             if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
             Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-            # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+             New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
             try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
             }
     Write-Host ""
