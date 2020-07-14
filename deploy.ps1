@@ -79,7 +79,7 @@ Write-Host "Processing $stackname" -f Magenta
            Remove-CFNStack -Stackname $stackname -region $region -force
           } else { 
           Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Update-CFNStack -Stackname $stackname -region $region -force
+           Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
           } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
 
@@ -145,7 +145,7 @@ Write-Host "Processing $stackname" -f Magenta
            Remove-CFNStack -Stackname $stackname -region $region -force
         } else { 
           Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Update-CFNStack -Stackname $stackname -region $region -force
+           Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
           } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
     if($stack -ge 1){ # Stack does not exist -> Deploy 
@@ -222,7 +222,7 @@ foreach($a in $accounts){
                Remove-CFNStack -Stackname $stackname -region $region -force
               } else { 
               Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-               Update-CFNStack -Stackname $stackname -region $region -force
+               Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
             } 
         try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
         if($stack -ge 1){ # Stack does not exist -> Deploy 

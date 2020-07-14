@@ -7,10 +7,10 @@ Resources:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties: 
       SubnetIds: 
-        - subnet-04503bb0c40f7a257,subnet-08839b2df9b51ce85,subnet-085dbb112e20012f8 
+        - subnet-044026c9bb4066cdc,subnet-0e8f2025f71156fa8,subnet-0f82a782bf9ebc433 
         
       TransitGatewayId: tgw-067fc30b039641df1
-      VpcId: vpc-080bf7929d0091313
+      VpcId: vpc-06caaf6f5ef406d5c
       Tags:
         -
           Key: Name
