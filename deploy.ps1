@@ -67,7 +67,8 @@ Write-Host "Processing $stackname" -f Magenta
         try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
       # Try create a new changeset if one does not already exist.
       try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-      $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status
+      try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+      catch {Write-Host "No Change Set Exists" -f yellow}
       if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
       if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
     if($stack -eq 2){
@@ -133,7 +134,8 @@ Write-Host "Processing $stackname" -f Magenta
         try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
       # Try create a new changeset if one does not already exist.
       try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-      $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status
+      try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+      catch {Write-Host "No Change Set Exists" -f yellow}
       if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
       if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
       if($stack -eq 2){
@@ -210,7 +212,8 @@ foreach($a in $accounts){
             try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
           # Try create a new changeset if one does not already exist.
           try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-          $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status
+          try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+          catch {Write-Host "No Change Set Exists" -f yellow}
           if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
           if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
           if($stack -eq 2){
