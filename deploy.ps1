@@ -71,6 +71,7 @@ Write-Host "Processing $stackname" -f Magenta
       $newvalues = @("DELETE_COMPLETE")
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
+
         try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
@@ -155,6 +156,7 @@ Write-Host "Processing $stackname" -f Magenta
       $newvalues = @("DELETE_COMPLETE")
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
+        # This might not be working properly, it did not detect a change when a Principal was Removed.
         try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
