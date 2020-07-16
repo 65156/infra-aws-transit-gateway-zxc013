@@ -56,44 +56,61 @@ Write-Host "Processing $stackname" -f Magenta
     $_ -replace("regexbgpasn","$bgpASN") 
     } | Set-Content $outfile -force
 
-    $error.clear() ; $stack = 0 ; $stackstatus = 0 ; $changesetstatus = 0
-    try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
-    catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-    #if($update -eq $true){$stack = 2} 
-    #if($teardown -eq $true){$stack = 2}
-    if($stack -eq 0){
-      # Checks if stack exists and if changes have been made
-      if($stackstatus -eq "CREATE_IN_PROGRESS"){
-        try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
-      # Try create a new changeset if one does not already exist.
-      try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-      try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
-      catch {Write-Host "No Change Set Exists" -f yellow}
-      if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
-      if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
-    if($stack -eq 2){
-        # Update Stack
-        Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-        $stack = 0 
-        if($teardown -eq $true){
-          Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Remove-CFNStack -Stackname $stackname -region $region -force
-          } else { 
-          Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
-          } 
-        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
+    $error.clear() ; $stack = 0 ; $stack_status = 0 ; $changeset_status = 0
 
-    if($stack -ge 1){ # Stack does not exist -> Deploy 
+    # Try get existing stack
+    try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
+    catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
+    if($update -eq $true){$stack = 1} # if forcing update (delete + new)
+    if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+    
+    # Check Stack Status
+    if($stack -eq 0){
+      $updatevalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS","UPDATE_COMPLETE","UPDATE_IN_PROGRESS","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE")
+      $deletevalues = @("CREATE_FAILED","DELETE_FAILED")
+      $newvalues = @("DELETE_COMPLETE")
+      foreach($value in $updatevalues){if($value -eq $stack_status){ 
+        # Create a change set and compare to see if there are changes being provided.
+        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+        try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+        catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
+        if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
+        if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+        } } #skip iteration
+      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+      foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
+    }
+  }
+      
+    # Delete Stack
+    if($stack -eq 1){
+      Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+      # Remove-CFNStack -Stackname $stackname -region $region -force
+      # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+      # Force Update (New Stack after Force Delete)
+      if($update -eq $true){$stack = 3}
+      }
+    
+    # Update Stack
+    if($stack -eq 2){
+      Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+      # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
+      # $stack = 0 
+      # Update-CFNStack -Stackname $stackname -region $region -force
+      # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+    } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
+    
+    # Create Stack (Generally a New Stack)
+    if($stack -eq 3){ 
         $error.clear()
         # Attempts to validate the CF template.
         Write-host "Validating CF Template: " -nonewline ; 
         Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
-        if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ; continue } 
+        if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+        # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+        # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 Write-Host ""
 
@@ -123,34 +140,52 @@ Write-Host "Processing $stackname" -f Magenta
        -replace("regexresourcearns",$transitgatewayARN) 
     } | Set-Content $outfile -force
 
-    $error.clear() ; $stack = 0 ; $stackstatus = 0 ; $changesetstatus = 0
-    try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
-    catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-    if($update -eq $true){$stack = 2}
-    if($teardown -eq $true){$stack = 2}
+    $error.clear() ; $stack = 0 ; $stack_status = 0 ; $changeset_status = 0
+
+    # Try get existing stack
+    try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
+    catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
+    if($update -eq $true){$stack = 1} # if forcing update (delete + new)
+    if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+    
+    # Check Stack Status
     if($stack -eq 0){
-      # Checks if stack exists and if changes have been made
-      if($stackstatus -eq "CREATE_IN_PROGRESS"){
-        try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
-      # Try create a new changeset if one does not already exist.
-      try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-      try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
-      catch {Write-Host "No Change Set Exists" -f yellow}
-      if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
-      if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
-      if($stack -eq 2){
-        # Update Stack
-        Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-        $stack = 0 
-        if($teardown -eq $true){ 
-          Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Remove-CFNStack -Stackname $stackname -region $region -force
-        } else { 
-          Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-           Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
-          } 
-        try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
-    if($stack -ge 1){ # Stack does not exist -> Deploy 
+      $updatevalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS","UPDATE_COMPLETE","UPDATE_IN_PROGRESS","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE")
+      $deletevalues = @("CREATE_FAILED","DELETE_FAILED")
+      $newvalues = @("DELETE_COMPLETE")
+      foreach($value in $updatevalues){if($value -eq $stack_status){ 
+        # Create a change set and compare to see if there are changes being provided.
+        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+        try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+        catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
+        if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
+        if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+        } } #skip iteration
+      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+      foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
+    }
+  }
+      
+    # Delete Stack
+    if($stack -eq 1){
+      Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+      # Remove-CFNStack -Stackname $stackname -region $region -force
+      # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+      # Force Update (New Stack after Force Delete)
+      if($update -eq $true){$stack = 3}
+      }
+    
+    # Update Stack
+    if($stack -eq 2){
+      Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+      # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
+      # $stack = 0 
+      # Update-CFNStack -Stackname $stackname -region $region -force
+      # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+    } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
+    
+    # Create Stack (Generally a New Stack)
+    if($stack -eq 3){ 
         $error.clear()
         # Attempts to validate the CF template.
         Write-host "Validating CF Template: " -nonewline ; 
@@ -158,8 +193,8 @@ Write-Host "Processing $stackname" -f Magenta
         if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
         if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
         Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-         New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-        try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+        # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+        # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         }
 Write-Host ""
 
@@ -199,49 +234,63 @@ foreach($a in $accounts){
 
         # Accept resource share ARN
         try {Get-RAMResourceShareInvitation -region $region | ? ResourceShareName -like $resourcesharename | Confirm-RAMResourceShareInvitation -region $region ; Write-Host "Accepting Share" -f green }
-        catch { Write-Host "Error or Already Accepted!" -f yellow}
+        catch { Write-Host "Error or already accepted!" -f yellow}
 
-        $error.clear() ; $stack = 0 ; $stackstatus = 0 ; $changesetstatus = 0
-        try { $stackstatus = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
-        catch { $stack = 1 ; Write-Host "Stack does not exist..." -f yellow } # set stack value to 1 if first deployment
-        if($update -eq $true){$stack = 2}
-        if($teardown -eq $true){$stack = 2}
+        $error.clear() ; $stack = 0 ; $stack_status = 0 ; $changeset_status = 0
+
+        # Try get existing stack
+        try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
+        catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
+        if($update -eq $true){$stack = 1} # if forcing update (delete + new)
+        if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+        
+        # Check Stack Status
         if($stack -eq 0){
-          # Checks if stack exists and if changes have been made
-          if($stackstatus -eq "CREATE_IN_PROGRESS"){
-            try{ Wait-CFNStack -Stackname $stackname -region $region ; continue } catch {}}
-          # Try create a new changeset if one does not already exist.
-          try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
-          try { $changesetstatus = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
-          catch {Write-Host "No Change Set Exists" -f yellow ; $stack = 3 }
-          if($changesetstatus -eq "FAILED" ){Write-Host "No Changes" -f white }
-          if($changesetstatus -eq "CREATE_COMPLETE" ){Write-Host "Changes Detected" -f yellow ; $stack = 2 }}
-          if($stack -eq 2){
-            # Update Stack
-            Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-            $stack = 0 
-            if($teardown -eq $true){ 
-              Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
-               # Remove-CFNStack -Stackname $stackname -region $region -force
-            } else { 
-              Write-Host "Updating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-               # Update-CFNStack -Stackname $stackname -TemplateBody (Get-Content $outfile -raw) -region $region -force
-              } 
-            try{ Wait-CFNStack -Stackname $stackname -region $region } catch {}} # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
-        if($stack -ge 1){ # Stack does not exist -> Deploy 
+          $updatevalues = @("CREATE_COMPLETE","CREATE_IN_PROGRESS","UPDATE_COMPLETE","UPDATE_IN_PROGRESS","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE")
+          $deletevalues = @("CREATE_FAILED","DELETE_FAILED")
+          $newvalues = @("DELETE_COMPLETE")
+          foreach($value in $updatevalues){if($value -eq $stack_status){ 
+            # Create a change set and compare to see if there are changes being provided.
+            try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+            try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
+            catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
+            if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
+            if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+            } } #skip iteration
+          foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+          foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
+        }
+      }
+          
+        # Delete Stack
+        if($stack -eq 1){
+          Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+          # Remove-CFNStack -Stackname $stackname -region $region -force
+          # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+          # Force Update (New Stack after Force Delete)
+          if($update -eq $true){$stack = 3}
+          }
+        
+        # Update Stack
+        if($stack -eq 2){
+          Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
+          # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
+          # $stack = 0 
+          # Update-CFNStack -Stackname $stackname -region $region -force
+          # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+        } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
+        
+        # Create Stack (Generally a New Stack)
+        if($stack -eq 3){ 
             $error.clear()
             # Attempts to validate the CF template.
-            if($stackstatus -eq "ROLLBACK_COMPLETE"){
-              Write-Host "Removing Existing Stack"
-              Remove-CFNStack -Stackname $stackname -region $region -force
-            }
             Write-host "Validating CF Template: " -nonewline ; 
             Test-CFNTemplate -templateBody (Get-Content $outfile -raw) -Region $region
             if($error.count -gt 0){Write-Host "Error Validation Failure!" -f red ; Write-Host "" ;  continue } 
             if($error.count -eq 0){Write-Host "Template is Valid" -f green ; Write-Host "" }
             Write-Host "Creating Stack: " -f White -b Magenta -NoNewLine ; Write-Host " $stackname"-f black -b white
-              New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
-            try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
+            # New-CFNStack -StackName $stackname -TemplateBody (Get-Content $outfile -raw) -Region $region
+            # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
             }
     Write-Host ""
 
