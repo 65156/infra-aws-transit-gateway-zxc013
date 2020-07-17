@@ -71,11 +71,25 @@ Write-Host "Processing $stackname" -f Magenta
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
 
-        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
+        catch {
+          #Changeset May Already Exist, Try Remove and then Try Again
+          try { 
+            Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
+            New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
+          } 
+
+        }  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
-        if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
-        if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+        if($changeset_status -eq "FAILED" ){ 
+          Write-Host "No Changes" -f white ; Write-Host "" ; continue 
+          Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+        } # break as no changes
+        if($changeset_status -eq "CREATE_COMPLETE" ){ 
+          Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 
+          Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+          }
         } } #skip iteration
       foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
       foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
@@ -128,7 +142,7 @@ foreach($a in $accounts){
   $principalslist += "- `"$accountID`" `n"+"        "}
 
 $stackname = "$projectname-share"
-$resourcesharename = $stackname #refernced later to accept the resource share in other accounts
+$resourcesharename = $stackname #referenced later to accept the resource share in other accounts
 $infile = $resourcesharesource
 $outfile = $resourceshare
 
@@ -155,12 +169,26 @@ Write-Host "Processing $stackname" -f Magenta
       $newvalues = @("DELETE_COMPLETE")
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
-        # This might not be working properly, it did not detect a change when a Principal was Removed.
-        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+
+        try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
+        catch {
+          #Changeset May Already Exist, Try Remove and then Try Again
+          try { 
+            Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
+            New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
+          } 
+
+        }  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
-        if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
-        if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+        if($changeset_status -eq "FAILED" ){ 
+          Write-Host "No Changes" -f white ; Write-Host "" ; continue 
+          Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+        } # break as no changes
+        if($changeset_status -eq "CREATE_COMPLETE" ){ 
+          Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 
+          Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+          }
         } } #skip iteration
       foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
       foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
@@ -199,7 +227,6 @@ Write-Host "Processing $stackname" -f Magenta
         }
 Write-Host ""
 
-Pause
 # Connect to each account and configure transit gateway attachment
 Write-Host "Processing Attachments" -f black -b white
 foreach($a in $accounts){   
@@ -253,11 +280,26 @@ foreach($a in $accounts){
           $newvalues = @("DELETE_COMPLETE")
           foreach($value in $updatevalues){if($value -eq $stack_status){ 
             # Create a change set and compare to see if there are changes being provided.
-            try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} catch {}  
+    
+            try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
+            catch {
+              #Changeset May Already Exist, Try Remove and then Try Again
+              try { 
+                Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
+                New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
+              } 
+    
+            }  
             try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
             catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
-            if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
-            if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
+            if($changeset_status -eq "FAILED" ){ 
+              Write-Host "No Changes" -f white ; Write-Host "" ; continue 
+              Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+            } # break as no changes
+            if($changeset_status -eq "CREATE_COMPLETE" ){ 
+              Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 
+              Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
+              }
             } } #skip iteration
           foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
           foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}

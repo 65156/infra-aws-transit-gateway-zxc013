@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Deployment for OFX
+
+Resources:
+  TransitGatewayResourceShare:
+    Type: AWS::RAM::ResourceShare
+    Properties: 
+      AllowExternalPrincipals: True
+      Name: transit-gateway-share
+      Principals: 
+        - "479125032639" 
+        - "995405243001" 
+        - "368940151251" 
+        - "368940151251" 
+        - "128288646639" 
+        - "978308152145" 
+        - "551178757864" 
+        - "020474317366" 
+        - "329175007949" 
+        - "281802470829" 
+        - "281802270829" 
+        
+      ResourceArns: 
+        - arn:aws:ec2:ap-southeast-2:045932084931:transit-gateway/tgw-067fc30b039641df1
