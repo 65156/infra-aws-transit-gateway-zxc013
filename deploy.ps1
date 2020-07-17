@@ -32,7 +32,6 @@ $transitgatewaysource = "./files/transit-gateway-source.yaml"
 $resourcesharesource = "./files/resource-share-source.yaml"
 $attachmentsource = "./files/attachment-source.yaml"
 $transitgateway = "./files/transit-gateway.yaml"
-$attachment = "./files/attachment.yaml"
 $resourceshare = "./files/resource-share.yaml"
 
 #Script Begin
@@ -210,10 +209,11 @@ foreach($a in $accounts){
     $subnets = $a.subnets
     $vpc = $a.vpc
     $stackname = "$projectname-attachment-$vpc"
+    $attachment = "./files/$stackname.yaml"
 
     # Connect to Account
-    Write-Host "Connecting to account: $account" -f white 
-    Switch-RoleAlias $account $role 
+    Write-Host "Connecting to account: $Account" -f white 
+    Switch-RoleAlias $Account $role 
 
     # Build Subnet Array 
     $subnetlist = $null
