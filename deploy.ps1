@@ -61,8 +61,8 @@ Write-Host "Processing $stackname" -f Magenta
     # Try get existing stack
     try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
     catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
-    if($update -eq $true){$stack = 1} # if forcing update (delete + new)
-    if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+    if($redeploy -eq $true){$stack = 1} # if forcing update (delete + new)
+    if($delete -eq $true){$stack = 1} # if forcing teardown (delete only)
     
     # Check Stack Status
     if($stack -eq 0){
@@ -78,7 +78,7 @@ Write-Host "Processing $stackname" -f Magenta
         if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
         if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
         } } #skip iteration
-      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
       foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
     }
   }
@@ -89,7 +89,7 @@ Write-Host "Processing $stackname" -f Magenta
       # Remove-CFNStack -Stackname $stackname -region $region -force
       # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
       # Force Update (New Stack after Force Delete)
-      if($update -eq $true){$stack = 3}
+      if($redeploy -eq $true){$stack = 3}
       }
     
     # Update Stack
@@ -146,8 +146,8 @@ Write-Host "Processing $stackname" -f Magenta
     # Try get existing stack
     try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
     catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
-    if($update -eq $true){$stack = 1} # if forcing update (delete + new)
-    if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+    if($redeploy -eq $true){$stack = 1} # if forcing update (delete + new)
+    if($delete -eq $true){$stack = 1} # if forcing teardown (delete only)
     
     # Check Stack Status
     if($stack -eq 0){
@@ -163,7 +163,7 @@ Write-Host "Processing $stackname" -f Magenta
         if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
         if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
         } } #skip iteration
-      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+      foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
       foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
     }
   }
@@ -174,7 +174,7 @@ Write-Host "Processing $stackname" -f Magenta
       # Remove-CFNStack -Stackname $stackname -region $region -force
       # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
       # Force Update (New Stack after Force Delete)
-      if($update -eq $true){$stack = 3}
+      if($redeploy -eq $true){$stack = 3}
       }
     
     # Update Stack
@@ -243,8 +243,8 @@ foreach($a in $accounts){
         # Try get existing stack
         try { $stack_status = ((Get-CFNStack -Stackname $stackname -region $region).StackStatus).Value }
         catch {Write-Host "Stack does not exist..." -f yellow ;  $stack = 3 } # set stack value to 3 to deploy 
-        if($update -eq $true){$stack = 1} # if forcing update (delete + new)
-        if($teardown -eq $true){$stack = 1} # if forcing teardown (delete only)
+        if($redeploy -eq $true){$stack = 1} # if forcing update (delete + new)
+        if($delete -eq $true){$stack = 1} # if forcing teardown (delete only)
         
         # Check Stack Status
         if($stack -eq 0){
@@ -259,7 +259,7 @@ foreach($a in $accounts){
             if($changeset_status -eq "FAILED" ){ Write-Host "No Changes" -f white ; Write-Host "" ; continue } # break as no changes
             if($changeset_status -eq "CREATE_COMPLETE" ){ Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 }
             } } #skip iteration
-          foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $update = $true }
+          foreach($value in $deletevalues){if($value -eq $stack_status){ $stack = 1 ; $redeploy = $true }
           foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
         }
       }
@@ -270,7 +270,7 @@ foreach($a in $accounts){
           # Remove-CFNStack -Stackname $stackname -region $region -force
           # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
           # Force Update (New Stack after Force Delete)
-          if($update -eq $true){$stack = 3}
+          if($redeploy -eq $true){$stack = 3}
           }
         
         # Update Stack
