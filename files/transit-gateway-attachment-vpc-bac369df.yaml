@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Attachment for Account
+
+Resources:
+  TransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - subnet-d0f1bbb5 
+        - subnet-41f44736 
+        - subnet-d398508a 
+        
+      TransitGatewayId: tgw-067fc30b039641df1
+      VpcId: vpc-bac369df
+      Tags:
+        -
+          Key: Name
+          Value: LegacyDev
+      
+Outputs:
+  TransitGatewayAttachment:
+    Description: A reference to the created TransitGatewayAttachment
+    Value: !Ref TransitGatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}

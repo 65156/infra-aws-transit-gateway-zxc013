@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Attachment for Account
+
+Resources:
+  TransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - subnet-0b4fb911505d4de62 
+        - subnet-07132629930595b7c 
+        - subnet-01b0674fb500c8c54 
+        
+      TransitGatewayId: tgw-067fc30b039641df1
+      VpcId: vpc-050885cb53b9a1d39
+      Tags:
+        -
+          Key: Name
+          Value: SandboxD3
+      
+Outputs:
+  TransitGatewayAttachment:
+    Description: A reference to the created TransitGatewayAttachment
+    Value: !Ref TransitGatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}

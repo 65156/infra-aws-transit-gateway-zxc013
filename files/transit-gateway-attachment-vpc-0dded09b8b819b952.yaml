@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Attachment for Account
+
+Resources:
+  TransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - subnet-05bedc205024a860b 
+        - subnet-03fc3e7f57c6272ff 
+        - subnet-0ae8aaae3d276c0c8 
+        
+      TransitGatewayId: tgw-067fc30b039641df1
+      VpcId: vpc-0dded09b8b819b952
+      Tags:
+        -
+          Key: Name
+          Value: KumoDev
+      
+Outputs:
+  TransitGatewayAttachment:
+    Description: A reference to the created TransitGatewayAttachment
+    Value: !Ref TransitGatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}

@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Transit Gateway Attachment for Account
+
+Resources:
+  TransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - subnet-353ec243 
+        - subnet-a9837cf0 
+        - subnet-e111c085 
+        
+      TransitGatewayId: tgw-067fc30b039641df1
+      VpcId: vpc-e818128d
+      Tags:
+        -
+          Key: Name
+          Value: PipelineProd
+      
+Outputs:
+  TransitGatewayAttachment:
+    Description: A reference to the created TransitGatewayAttachment
+    Value: !Ref TransitGatewayAttachment
+    Export:
+      Name: !Sub ${AWS::StackName}

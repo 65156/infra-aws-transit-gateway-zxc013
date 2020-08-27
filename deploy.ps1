@@ -70,15 +70,13 @@ Write-Host "Processing $stackname" -f Magenta
       $newvalues = @("DELETE_COMPLETE")
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
-
         try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
         catch {
           #Changeset May Already Exist, Try Remove and then Try Again
           try { 
             Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
             New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
-          } 
-
+          } catch {}
         }  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
@@ -109,7 +107,6 @@ Write-Host "Processing $stackname" -f Magenta
     if($stack -eq 2){
       Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
       # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-      # $stack = 0 
       # Update-CFNStack -Stackname $stackname -region $region -force
       # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
     } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
@@ -169,22 +166,20 @@ Write-Host "Processing $stackname" -f Magenta
       $newvalues = @("DELETE_COMPLETE")
       foreach($value in $updatevalues){if($value -eq $stack_status){ 
         # Create a change set and compare to see if there are changes being provided.
-
         try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
         catch {
           #Changeset May Already Exist, Try Remove and then Try Again
           try { 
             Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
             New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
-          } 
-
+          } catch {}
         }  
         try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
         catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
         if($changeset_status -eq "FAILED" ){ 
           Write-Host "No Changes" -f white ; Write-Host "" ; continue 
           Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
-        } # break as no changes
+        } # break as no changes 
         if($changeset_status -eq "CREATE_COMPLETE" ){ 
           Write-Host "Changes Detected, Updating Stack" -f yellow ; $stack = 2 
           Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null
@@ -194,7 +189,7 @@ Write-Host "Processing $stackname" -f Magenta
       foreach($value in $newvalues){if($value -eq $stack_status){ $stack = 3 }}
     }
   }
-      
+
     # Delete Stack
     if($stack -eq 1){
       Write-Host "Removing Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
@@ -208,7 +203,6 @@ Write-Host "Processing $stackname" -f Magenta
     if($stack -eq 2){
       Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
       # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-      # $stack = 0 
       # Update-CFNStack -Stackname $stackname -region $region -force
       # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
     } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
@@ -280,15 +274,13 @@ foreach($a in $accounts){
           $newvalues = @("DELETE_COMPLETE")
           foreach($value in $updatevalues){if($value -eq $stack_status){ 
             # Create a change set and compare to see if there are changes being provided.
-    
             try { New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)} 
             catch {
               #Changeset May Already Exist, Try Remove and then Try Again
               try { 
                 Remove-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname -Force | Out-Null 
                 New-CFNChangeSet -StackName $stackname -Region $region -ChangeSetName $stackname -TemplateBody (Get-Content $outfile -raw)
-              } 
-    
+              } catch {}
             }  
             try { $changeset_status = (Get-CFNChangeSet -Region $region -ChangeSetName $stackname -stackname $stackname).status }
             catch {Write-Host "No Change Set Exists -- this should never happen!" -f red ; continue } # break as logic error
@@ -319,7 +311,6 @@ foreach($a in $accounts){
         if($stack -eq 2){
           Write-Host "Updating Stack: " -f black -b red -NoNewLine ; Write-Host " $stackname"-f black -b white
           # Remove-CFNChangeSet -Stackname $stackname -ChangeSetName $stackname -Region $region -Force | Out-Null #cleanup change set
-          # $stack = 0 
           # Update-CFNStack -Stackname $stackname -region $region -force
           # try{ Wait-CFNStack -Stackname $stackname -region $region -timeout 240 } catch { Write-Host " $stackname failed" -f black -b red }
         } # try wait for stack deployment if needed, catch will hide error if stack does not exist. 
